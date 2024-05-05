@@ -1,14 +1,15 @@
 import random
-import math 
-import statistics  
-import numpy
+import math
+import statistics
+import numpy as np
+import matplotlib.pyplot as plt
 
 A = 10
-dimensoes = 20 
-tamanho_populacao = 100  
-taxa_cruzamento = 0.7 
-taxa_mutacao = 0.01 
-num_geracoes = 100 
+dimensoes = 20
+tamanho_populacao = 100
+taxa_cruzamento = 0.7
+taxa_mutacao = 0.01
+num_geracoes = 100
 bits_per_gene = 10
 
 class Cromossomo:
@@ -26,7 +27,7 @@ class Cromossomo:
         return genes
 
     def calcular_adaptacao(self):
-        return A * dimensoes + sum(x**2 - A * math.cos(2 * math.pi * x) for x in self.genes) + 1  # Função de aptidão Ψ(x) (ponto 6)
+        return A * dimensoes + sum(x**2 - A * math.cos(2 * math.pi * x) for x in self.genes) + 1
 
 def inicializar_populacao():
     return [Cromossomo(''.join(random.choice(['0', '1']) for _ in range(dimensoes * bits_per_gene)))
@@ -35,7 +36,7 @@ def inicializar_populacao():
 def selecao_roleta(populacao):
     adaptacao_total = sum(cromossomo.adaptacao for cromossomo in populacao)
     probabilidades_selecao = [(cromossomo.adaptacao / adaptacao_total) for cromossomo in populacao]
-    return populacao[numpy.random.choice(len(populacao), p=probabilidades_selecao)]
+    return populacao[np.random.choice(len(populacao), p=probabilidades_selecao)]
 
 def cruzamento(pai1, pai2):
     if random.random() < taxa_cruzamento:
@@ -57,6 +58,9 @@ def mutacao(cromossomo):
 
 def algoritmo_genetico():
     populacao = inicializar_populacao()
+    aptidao_minima = []
+    aptidao_maxima = []
+    aptidao_media = []
     for _ in range(num_geracoes):
         nova_populacao = []
         while len(nova_populacao) < tamanho_populacao:
@@ -67,18 +71,20 @@ def algoritmo_genetico():
             mutacao(filho2)
             nova_populacao.extend([filho1, filho2])
         populacao = nova_populacao
-    return populacao
+        adaptacoes = [c.adaptacao for c in populacao]
+        aptidao_minima.append(min(adaptacoes))
+        aptidao_maxima.append(max(adaptacoes))
+        aptidao_media.append(sum(adaptacoes) / len(adaptacoes))
+    return aptidao_minima, aptidao_maxima, aptidao_media
 
+aptidao_minima, aptidao_maxima, aptidao_media = algoritmo_genetico()
 
-def coletar_estatisticas(populacao):
-    valores_adaptacao = [cromossomo.adaptacao for cromossomo in populacao]
-    return {
-        'min': min(valores_adaptacao),
-        'max': max(valores_adaptacao),
-        'media': sum(valores_adaptacao) / len(valores_adaptacao),
-        'desvio_padrao': statistics.stdev(valores_adaptacao)
-    }
-
-populacao_final = algoritmo_genetico()
-estatisticas = coletar_estatisticas(populacao_final)
-print(estatisticas)
+plt.figure(figsize=(10, 5))
+plt.plot(aptidao_minima, label='Aptidão Minima')
+plt.plot(aptidao_maxima, label='Aptidão Máxima')
+plt.plot(aptidao_media, label='Aptidão Média')
+plt.title('Aptidão por gerações')
+plt.xlabel('Gerações')
+plt.ylabel('Aptidão')
+plt.legend()
+plt.show()
